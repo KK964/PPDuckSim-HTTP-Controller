@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using UnityEngine.AddressableAssets;
+using UnityEngine;
 
 namespace PPDuckSim_HTTP_Controller.endpoints
 {
@@ -70,6 +71,51 @@ namespace PPDuckSim_HTTP_Controller.endpoints
             JObject obj = new JObject();
             obj.Add("message", $"Successfully changed duck ({nameChange.duckId}) to {nameChange.name}");
 
+            return new HttpServer.Response(true, obj);
+        }
+
+        public static HttpServer.Response POSTDuckSpectate(HttpListenerContext context)
+        {
+            GeneralManager manager = GeneralManager.Instance;
+            if (manager == null)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(500, "Error loading GeneralManager"));
+            }
+
+            if (context.Request.InputStream == null)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
+            }
+
+            string body = new StreamReader(context.Request.InputStream).ReadToEnd();
+
+            if (string.IsNullOrEmpty(body))
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
+            }
+
+            DuckNameChange nameChange;
+            try
+            {
+                nameChange = JsonConvert.DeserializeObject<DuckNameChange>(body);
+            }
+            catch (Exception e)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Body parsing failed"));
+            }
+
+            DuckManager mgr = Mod.GetDucksManager(nameChange.duckId);
+
+            if (mgr == null)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
+            }
+
+            GameObject duck = mgr.transform.gameObject;
+            GeneralManager.Instance.ChangeDuck(GeneralManager.Instance.GetDuckIndex(duck));
+
+            JObject obj = new JObject();
+            obj.Add("message", $"Successfully spectated duck ({nameChange.duckId})");
             return new HttpServer.Response(true, obj);
         }
 

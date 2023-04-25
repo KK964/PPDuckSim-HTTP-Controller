@@ -42,7 +42,8 @@ namespace PPDuckSim_HTTP_Controller
             },
             ["POST"] = new Dictionary<string, ExecuteMethod>()
             {
-                ["/name"] = POSTEndpoints.POSTDuckName
+                ["/name"] = POSTEndpoints.POSTDuckName,
+                ["/spectate"] = POSTEndpoints.POSTDuckSpectate,
             }
         };
 
