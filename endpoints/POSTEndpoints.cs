@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace PPDuckSim_HTTP_Controller.endpoints
 {
-    internal class POSTEndpoints
+    internal class POSTEndpoints : MonoBehaviour
     {
         public static HttpServer.Response POSTDuckName(HttpListenerContext context)
         {
@@ -66,7 +66,17 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
             }
 
-            DuckUIManager.instance.ChangeName(nameChange.duckId, nameChange.name);
+            if (DuckUIManager.instance != null)
+            {
+                DuckUIManager.instance.ChangeName(nameChange.duckId, nameChange.name);
+            } else
+            {
+                GameObject gameObject = manager.gameObject;
+                DuckUIManager duckUIManager = gameObject.AddComponent<DuckUIManager>();
+                duckUIManager.ChangeName(nameChange.duckId, nameChange.name);
+                Destroy(duckUIManager);
+            }
+
 
             JObject obj = new JObject();
             obj.Add("message", $"Successfully changed duck ({nameChange.duckId}) to {nameChange.name}");
