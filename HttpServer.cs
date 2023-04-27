@@ -39,6 +39,8 @@ namespace PPDuckSim_HTTP_Controller
             ["GET"] = new Dictionary<string, ExecuteMethod>()
             {
                 ["/ducks"] = GETEndpoints.GETDuckIDs,
+                ["/currentDuck"] = GETEndpoints.GETCurrentDuckID,
+                ["/areDucksSpawned"] = GETEndpoints.GETAreDucksSpawned,
             },
             ["POST"] = new Dictionary<string, ExecuteMethod>()
             {
