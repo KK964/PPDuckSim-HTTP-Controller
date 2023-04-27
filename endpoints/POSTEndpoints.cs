@@ -57,6 +57,11 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing name"));
             }
 
+            if (!Saves.instance.GetSettings().showNamed)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Duck names are not shown"));
+            }
+
             Type type = manager.GetType();
             FieldInfo field = type.GetField("allDucks", BindingFlags.NonPublic | BindingFlags.Instance);
             Dictionary<string, AssetReference> ducks = (Dictionary<string, AssetReference>)field.GetValue(manager);
@@ -65,6 +70,15 @@ namespace PPDuckSim_HTTP_Controller.endpoints
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
             }
+
+            DuckManager mgr = Mod.GetDucksManager(nameChange.duckId);
+
+            if (mgr == null)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
+            }
+
+            mgr.duckName.gameObject.SetActive(Saves.instance.GetSettings().showNamed);
 
             if (DuckUIManager.instance != null)
             {
@@ -76,7 +90,6 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 duckUIManager.ChangeName(nameChange.duckId, nameChange.name);
                 Destroy(duckUIManager);
             }
-
 
             JObject obj = new JObject();
             obj.Add("message", $"Successfully changed duck ({nameChange.duckId}) to {nameChange.name}");
