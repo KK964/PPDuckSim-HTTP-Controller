@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -21,41 +19,20 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(500, "Error loading GeneralManager"));
             }
 
-            if (context.Request.InputStream == null)
+            JObject body = HttpServer.ParseBody(context);
+
+            if (body == null)
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
             }
 
-            string body = new StreamReader(context.Request.InputStream).ReadToEnd();
-
-            if (string.IsNullOrEmpty(body))
-            {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
-            }
-
-            DuckNameChange nameChange;
-            try
-            {
-                nameChange = JsonConvert.DeserializeObject<DuckNameChange>(body);
-            } catch (Exception e)
-            {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Body parsing failed"));
-            }
-
-            if (nameChange == null)
+            if (!HttpServer.HasKeys(body, new string[] { "duckId", "name" }))
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Malformed body"));
             }
 
-            if (string.IsNullOrEmpty(nameChange.duckId))
-            {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing duckId"));
-            }
-
-            if (string.IsNullOrEmpty(nameChange.name))
-            {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing name"));
-            }
+            string duckId = body.Value<string>("duckId");
+            string name = body.Value<string>("name");
 
             if (!Saves.instance.GetSettings().showNamed)
             {
@@ -66,33 +43,24 @@ namespace PPDuckSim_HTTP_Controller.endpoints
             FieldInfo field = type.GetField("allDucks", BindingFlags.NonPublic | BindingFlags.Instance);
             Dictionary<string, AssetReference> ducks = (Dictionary<string, AssetReference>)field.GetValue(manager);
 
-            if (!ducks.Keys.Contains(nameChange.duckId))
+            if (!ducks.Keys.Contains(duckId))
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
             }
 
-            DuckManager mgr = Mod.GetDucksManager(nameChange.duckId);
+            DuckManager mgr = Mod.GetDucksManager(duckId);
 
             if (mgr == null)
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(404, "Duck not found"));
             }
 
-            mgr.duckName.gameObject.SetActive(Saves.instance.GetSettings().showNamed);
+            mgr.duckName.gameObject.SetActive(Saves.instance.GetSettings().showNamed && name != "");
 
-            if (DuckUIManager.instance != null)
-            {
-                DuckUIManager.instance.ChangeName(nameChange.duckId, nameChange.name);
-            } else
-            {
-                GameObject gameObject = manager.gameObject;
-                DuckUIManager duckUIManager = gameObject.AddComponent<DuckUIManager>();
-                duckUIManager.ChangeName(nameChange.duckId, nameChange.name);
-                Destroy(duckUIManager);
-            }
+            DuckUIManager.instance.ChangeName(duckId, name);
 
             JObject obj = new JObject();
-            obj.Add("message", $"Successfully changed duck ({nameChange.duckId}) to {nameChange.name}");
+            obj.Add("message", $"Successfully changed duck ({duckId}) to {name}");
 
             return new HttpServer.Response(true, obj);
         }
@@ -105,29 +73,21 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(500, "Error loading GeneralManager"));
             }
 
-            if (context.Request.InputStream == null)
+            JObject body = HttpServer.ParseBody(context);
+
+            if (body == null)
             {
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
             }
 
-            string body = new StreamReader(context.Request.InputStream).ReadToEnd();
-
-            if (string.IsNullOrEmpty(body))
+            if (!HttpServer.HasKeys(body, new string[] { "duckId" }))
             {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Missing body"));
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Malformed body"));
             }
 
-            DuckNameChange nameChange;
-            try
-            {
-                nameChange = JsonConvert.DeserializeObject<DuckNameChange>(body);
-            }
-            catch (Exception e)
-            {
-                return new HttpServer.Response(false, HttpServer.CreateErrorObject(400, "Body parsing failed"));
-            }
+            string duckId = body.Value<string>("duckId");
 
-            DuckManager mgr = Mod.GetDucksManager(nameChange.duckId);
+            DuckManager mgr = Mod.GetDucksManager(duckId);
 
             if (mgr == null)
             {
@@ -138,14 +98,8 @@ namespace PPDuckSim_HTTP_Controller.endpoints
             GeneralManager.Instance.ChangeDuck(GeneralManager.Instance.GetDuckIndex(duck));
 
             JObject obj = new JObject();
-            obj.Add("message", $"Successfully spectated duck ({nameChange.duckId})");
+            obj.Add("message", $"Successfully spectated duck ({duckId})");
             return new HttpServer.Response(true, obj);
-        }
-
-        public class DuckNameChange
-        {
-            public string duckId { get; set; }
-            public string name { get; set; }
         }
     }
 }
