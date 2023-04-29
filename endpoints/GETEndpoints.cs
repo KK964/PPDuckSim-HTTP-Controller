@@ -64,13 +64,9 @@ namespace PPDuckSim_HTTP_Controller.endpoints
                 return new HttpServer.Response(false, HttpServer.CreateErrorObject(500, "Error loading GeneralManager"));
             }
 
-            Type type = manager.GetType();
-            FieldInfo field = type.GetField("ducksToSpawn", BindingFlags.NonPublic | BindingFlags.Instance);
-            Dictionary<string, AssetReference> ducksToSpawn = (Dictionary<string, AssetReference>)field.GetValue(manager);
-
             bool allDucksSpawned = true;
 
-            foreach (string duckId in ducksToSpawn.Keys)
+            foreach (string duckId in Saves.instance.GetSave().inSceneDucks)
             {
                 DuckManager mngr = Mod.GetDucksManager(duckId);
                 if (mngr == null)
