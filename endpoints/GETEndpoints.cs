@@ -41,9 +41,17 @@ namespace PPDuckSim_HTTP_Controller.endpoints
             }
 
             int currentDuck = manager.CurrentDuck;
+            DuckManager duckManager = manager.Ducks[currentDuck].GetComponent<DuckManager>();
+
+            if (duckManager == null)
+            {
+                return new HttpServer.Response(false, HttpServer.CreateErrorObject(500, "Current duck has no DuckManager"));
+            }
+
 
             JObject obj = new JObject();
-            obj.Add("duckId", manager.Ducks[currentDuck].name);
+            obj.Add("duckId", duckManager.duckID);
+            obj.Add("name", duckManager.CustomName);
 
             return new HttpServer.Response(true, obj);
         }

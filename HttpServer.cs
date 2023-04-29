@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 using PPDuckSim_HTTP_Controller.endpoints;
+using System.IO;
 
 namespace PPDuckSim_HTTP_Controller
 {
@@ -99,7 +100,31 @@ namespace PPDuckSim_HTTP_Controller
             return err;
         }
 
+        public static bool HasKeys(JObject obj, string[] keys)
+        {
+            foreach (string key in keys)
+            {
+                if (!HasKey(obj, key)) return false;
+            }
+            return true;
+        }
+
+        public static bool HasKey(JObject obj, string key)
+        {
+            JToken objRef;
+            obj.TryGetValue(key, out objRef);
+            return objRef != null;
+        }
+
         public delegate Response ExecuteMethod(HttpListenerContext context);
+
+        public static JObject ParseBody(HttpListenerContext ctx)
+        {
+            if (ctx == null) return null;
+            if (ctx.Request.InputStream == null) return null;
+            string body = new StreamReader(ctx.Request.InputStream).ReadToEnd();
+            return JObject.Parse(body);
+        }
 
         public class Response
         {
